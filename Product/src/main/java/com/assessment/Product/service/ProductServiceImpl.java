@@ -1,6 +1,7 @@
 package com.assessment.Product.service;
 
 import com.assessment.Product.entity.Product;
+import com.assessment.Product.exception.ProductNotFoundException;
 import com.assessment.Product.model.ProductRequest;
 import com.assessment.Product.model.ProductResponse;
 import com.assessment.Product.repository.ProductRepo;
@@ -34,11 +35,22 @@ public class ProductServiceImpl implements ProductService{
 
     @Override
     public ProductResponse getProductDetailsById(long id) {
-        log.info("Inside service get product details {}");
-
-       Product product=  productRepo.findById(id).orElseThrow(()->new RuntimeException("Product not found with id"+id));
+        log.info("Inside service get product details {}",id);
+        Product product=  productRepo.findById(id).orElseThrow(()->new ProductNotFoundException("Product not found with id"+id,"PRODUCT_NOT_FOUND",404));
         ProductResponse productResponse = new ProductResponse();
         copyProperties(product,productResponse);
         return productResponse;
+    }
+
+    @Override
+    public void reduceQuantity(long id, long quantity) {
+        Product product = productRepo.findById(id).orElseThrow(()->new ProductNotFoundException("Product not found with id"+id,"PRODUCT_NOT_FOUND",404));
+        log.info("Product id {} and Quantity {}: ",id,product.getQuantity());
+        if(product.getQuantity()<quantity){
+            throw new ProductNotFoundException("Product Quantity is Insufficient "+id,"INSUFFICIENT",500);
+        }
+        product.setQuantity(product.getQuantity()-quantity);
+        productRepo.save(product);
+        log.info("Product updated successfully");
     }
 }
